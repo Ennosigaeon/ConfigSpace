@@ -31,7 +31,7 @@ import numpy as np
 import io
 from ConfigSpace.hyperparameters import Hyperparameter
 from ConfigSpace.hyperparameters.hyperparameter cimport Hyperparameter
-from typing import Dict, Any, Union
+from typing import Dict, Any, Union, Callable
 
 from ConfigSpace.forbidden cimport AbstractForbiddenComponent
 
@@ -678,3 +678,21 @@ cdef class ForbiddenGreaterThanRelation(ForbiddenRelation):
 
     cdef int _is_forbidden_vector(self, DTYPE_t left, DTYPE_t right) except -1:
         return left > right
+
+
+cdef class ForbiddenLambda(ForbiddenRelation):
+
+    cdef public check
+
+    def __init__(self, left: Hyperparameter, right: Hyperparameter, check: Callable):
+        super().__init__(left, right)
+        self.check = check
+
+    def __repr__(self):
+        return "Forbidden: lambda %s, %s: ???" % (self.left.name, self.right.name)
+
+    cdef int _is_forbidden(self, left, right) except -1:
+        return self.check(left, right)
+
+    cdef int _is_forbidden_vector(self, DTYPE_t left, DTYPE_t right) except -1:
+        return self.check(left, right)
